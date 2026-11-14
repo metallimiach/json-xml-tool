@@ -1,4 +1,4 @@
-# DataFormatter.dev
+# JSON/XML Toolkit
 
 A lightweight, browser-based tool for formatting, validating, repairing, minifying, and converting JSON and XML.
 
