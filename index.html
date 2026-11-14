@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON & XML Formatter, Validator & Converter</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-xl text-white font-mono font-bold text-lg">&lt;/&gt;</div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">DataFormatter.dev</h1>
+                    <p class="text-xs text-slate-400">Fast, private, client-side JSON & XML toolkit</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> 100% Client-Side & Secure
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Input Panel -->
+        <section class="flex flex-col bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Input Data</h2>
+                    <select id="inputType" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="auto">Auto-detect</option>
+                        <option value="json">JSON</option>
+                        <option value="xml">XML</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="loadSample()" class="text-xs text-blue-400 hover:text-blue-300 transition-colors px-2 py-1 bg-blue-500/10 rounded-md border border-blue-500/20">Load Sample</button>
+                    <button onclick="clearInput()" class="text-xs text-slate-400 hover:text-slate-200 transition-colors px-2 py-1 bg-slate-800 rounded-md">Clear</button>
+                </div>
+            </div>
+            
+            <div class="relative flex-grow min-h-[350px] resize-y overflow-hidden rounded-xl">
+                <pre id="inputHighlight" aria-hidden="true" class="absolute inset-[1px] overflow-hidden whitespace-pre-wrap break-words bg-slate-950 p-4 font-mono text-sm leading-5 text-transparent pointer-events-none"></pre>
+                <textarea id="inputData" placeholder="Paste your raw JSON or XML here..." class="absolute inset-0 w-full h-full min-h-0 resize-none bg-transparent border border-slate-800 rounded-xl p-4 font-mono text-sm leading-5 text-slate-200 focus:outline-none focus:border-blue-500 placeholder:text-slate-600"></textarea>
+            </div>
+            
+            <div id="inputErrorBox" aria-live="polite" class="hidden mt-3 p-3 rounded-xl bg-rose-950/20 border border-rose-900/50 text-xs font-mono text-rose-300"></div>
+            
+            <!-- Toolbar Actions -->
+            <div class="flex flex-wrap gap-2 mt-4 pt-3 border-t border-slate-800/80">
+                <button onclick="formatData()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs py-2.5 px-4 rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-95">Format / Prettify</button>
+                <button id="repairButton" onclick="repairData()" title="Repair common JSON syntax issues or add missing XML closing tags" class="hidden bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-medium text-xs py-2.5 px-4 rounded-xl transition-all border border-amber-500/20 active:scale-95">Repair</button>
+                <button id="convertButton" onclick="convertData()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs py-2.5 px-4 rounded-xl transition-all border border-slate-700 active:scale-95"></button>
+            </div>
+        </section>
+
+        <!-- Output Panel -->
+        <section class="flex flex-col bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Output Result</h2>
+                    <span id="statusBadge" class="text-xs px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 font-mono">Ready</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="minifyOutput()" class="text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-all px-3 py-1.5 rounded-lg border border-slate-700 active:scale-95">Minify</button>
+                    <button onclick="copyOutput()" class="text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-all px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 active:scale-95">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                        Copy Output
+                    </button>
+                </div>
+            </div>
+            
+            <textarea id="outputData" readonly placeholder="Formatted output will appear here..." class="w-full flex-grow min-h-[350px] bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-sm text-emerald-400 focus:outline-none resize-y placeholder:text-slate-600"></textarea>
+            
+            <!-- Error / Info Display Box -->
+            <div id="messageBox" class="mt-4 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-400 hidden">
+                <span id="messageText">No errors detected.</span>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-900/30 text-center py-6 text-xs text-slate-500">
+        <p>Built with privacy in mind. Powered by native browser parsers. Zero server logging.</p>
+    </footer>
+
+    <!-- Script Logic -->
+    <script>
+        function setStatus(text, type = 'normal') {
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = text;
+            badge.className = "text-xs px-2 py-0.5 rounded-md font-mono " + 
+                (type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
+                 type === 'error' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 
+                 'bg-slate-800 text-slate-400');
+        }
+
+        function showMessage(text, isError = false) {
+            const box = document.getElementById('messageBox');
+            const msg = document.getElementById('messageText');
+            box.classList.remove('hidden');
+            box.className = "mt-4 p-3 rounded-xl bg-slate-950 border text-xs font-mono " + (isError ? "border-rose-900/50 text-rose-300 bg-rose-950/20" : "border-slate-800 text-slate-400");
+            msg.textContent = text;
+        }
+
+        function loadSample() {
+            const sampleJson = {
+                "microSaaS": {
+                    "id": 2,
+                    "name": "JSON & XML Formatter",
+                    "status": "Active",
+                    "features": ["Validation", "Beautifying", "Minifying", "Conversion"],
+                    "targetAudience": ["Developers", "Engineers", "Data Analysts"],
+                    "metrics": {
+                        "latencyMs": 12,
+                        "secure": true
+                    }
+                }
+            };
+            document.getElementById('inputData').value = JSON.stringify(sampleJson, null, 2);
+            document.getElementById('inputType').value = 'json';
+            updateInputDiagnostics();
+            formatData();
+        }
+
+        function clearInput() {
+            document.getElementById('inputData').value = '';
+            document.getElementById('outputData').value = '';
+            updateInputDiagnostics();
+            setStatus('Ready');
+            document.getElementById('messageBox').classList.add('hidden');
+        }
+
+        function detectFormat(str) {
+            str = str.trim();
+            if (str.startsWith('{') || str.startsWith('[')) return 'json';
+            if (str.startsWith('<')) return 'xml';
+            try {
+                JSON.parse(str);
+                return 'json';
+            } catch (e) {
+                return 'xml';
+            }
+        }
+
+        function detectInputFormat(str) {
+            const trimmed = str.trim();
+            if (trimmed.startsWith('{') || trimmed.startsWith('[')) return 'json';
+            if (trimmed.startsWith('<')) return 'xml';
+            try {
+                JSON.parse(trimmed);
+                return 'json';
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function updateInputDiagnostics() {
+            const input = document.getElementById('inputData');
+            const raw = input.value;
+            const button = document.getElementById('repairButton');
+            const convertButton = document.getElementById('convertButton');
+            const highlight = document.getElementById('inputHighlight');
+            const errorBox = document.getElementById('inputErrorBox');
+            const trimmed = raw.trim();
+            let detectedType = document.getElementById('inputType').value;
+            if (detectedType === 'auto' && trimmed) detectedType = detectInputFormat(trimmed);
+            let isConvertible = false;
+            let firstErrorLine = null;
+            let errorMessage = '';
+            let isValid = !trimmed;
+
+            if (trimmed) {
+                let type = document.getElementById('inputType').value;
+                if (type === 'auto') type = detectFormat(trimmed);
+
+                if (type === 'json') {
+                    try {
+                        JSON.parse(raw);
+                        isValid = true;
+                        isConvertible = true;
+                    } catch (e) {
+                        isValid = false;
+                        errorMessage = 'JSON error: ' + e.message;
+                        const position = /position\s+(\d+)/i.exec(e.message);
+                        const lineColumn = /line\s+(\d+)\s+column\s+(\d+)/i.exec(e.message);
+                        if (position) {
+                            firstErrorLine = raw.slice(0, Number(position[1])).split('\n').length;
+                        } else if (lineColumn) {
+                            firstErrorLine = Number(lineColumn[1]);
+                        }
+                        try {
+                            const repairResult = parseRepairableJson(raw);
+                            firstErrorLine = raw.slice(0, repairResult.firstRepairPosition).split('\n').length;
+                            const descriptions = {
+                                'quoted unquoted property names': 'quote the unquoted property name',
+                                'converted single-quoted strings': 'use double quotes around strings',
+                                'inserted a missing comma': 'add the missing comma',
+                                'removed a trailing comma': 'remove the trailing comma',
+                                'closed an unfinished object': 'add the missing closing brace',
+                                'closed an unfinished array': 'add the missing closing bracket'
+                            };
+                            const issues = repairResult.repairs.map(repair => descriptions[repair] || repair);
+                            errorMessage = 'Issue on line ' + firstErrorLine + ': ' + issues[0] + '.';
+                        } catch (repairError) {
+                            if (Number.isInteger(repairError.position)) {
+                                firstErrorLine = raw.slice(0, repairError.position).split('\n').length;
+                            }
+                        }
+                        if (firstErrorLine !== null) {
+                            firstErrorLine = Math.min(firstErrorLine, raw.split('\n').length);
+                        }
+                    }
+                } else {
+                    const parsed = new DOMParser().parseFromString(raw, 'application/xml');
+                    const parserError = parsed.querySelector('parsererror');
+                    isValid = !parserError;
+                    isConvertible = isValid;
+                    if (parserError) {
+                        const details = parserError.textContent.replace(/\s+/g, ' ').trim();
+                        const line = /(?:error on )?line\s+(\d+)(?:\s+at column\s+(\d+))?/i.exec(details);
+                        if (line) {
+                            firstErrorLine = Number(line[1]);
+                            const description = details.slice(line.index + line[0].length)
+                                .replace(/^:\s*/, '')
+                                .replace(/\s+Below is a rendering[\s\S]*$/i, '');
+                            errorMessage = 'Issue on line ' + line[1] +
+                                (line[2] ? ', column ' + line[2] : '') +
+                                ': ' + description.replace(/[.]$/, '') + '.';
+                        } else {
+                            errorMessage = 'XML error: ' + details;
+                        }
+                    }
+                }
+            }
+
+            button.classList.toggle('hidden', isValid || !trimmed);
+            convertButton.textContent = detectedType === 'json' ? 'Convert to XML' : 'Convert to JSON';
+            convertButton.classList.toggle('hidden', !isConvertible || !trimmed);
+            errorBox.textContent = errorMessage;
+            errorBox.classList.toggle('hidden', isValid || !trimmed || !errorMessage);
+            highlight.replaceChildren();
+            raw.split('\n').forEach((line, index) => {
+                const row = document.createElement('span');
+                row.className = 'block';
+                row.textContent = line || '\u200b';
+                if (firstErrorLine === index + 1) {
+                    row.classList.add('bg-rose-500/25');
+                }
+                highlight.appendChild(row);
+            });
+            highlight.scrollTop = input.scrollTop;
+            highlight.scrollLeft = input.scrollLeft;
+        }
+
+        function convertData() {
+            let type = document.getElementById('inputType').value;
+            const raw = document.getElementById('inputData').value.trim();
+            if (type === 'auto') type = detectInputFormat(raw);
+
+            if (type === 'json') {
+                convertToXml();
+            } else if (type === 'xml') {
+                convertToJson();
+            } else {
+                setStatus('Unknown Format', 'error');
+                showMessage('Could not detect JSON or XML input.', true);
+            }
+        }
+
+        function formatData() {
+            const raw = document.getElementById('inputData').value.trim();
+            if (!raw) {
+                setStatus('Empty Input', 'error');
+                return;
+            }
+
+            let type = document.getElementById('inputType').value;
+            if (type === 'auto') {
+                type = detectFormat(raw);
+            }
+
+            if (type === 'json') {
+                try {
+                    const parsed = JSON.parse(raw);
+                    document.getElementById('outputData').value = JSON.stringify(parsed, null, 2);
+                    setStatus('Valid JSON', 'success');
+                    showMessage('JSON successfully formatted and validated.');
+                } catch (e) {
+                    setStatus('Invalid JSON', 'error');
+                    document.getElementById('messageBox').classList.add('hidden');
+                }
+            } else {
+                try {
+                    const formatted = formatXml(raw);
+                    document.getElementById('outputData').value = formatted;
+                    setStatus('Valid XML', 'success');
+                    showMessage('XML successfully formatted and validated.');
+                } catch (e) {
+                    setStatus('Invalid XML', 'error');
+                    document.getElementById('messageBox').classList.add('hidden');
+                }
+            }
+        }
+
+        function repairData() {
+            const raw = document.getElementById('inputData').value;
+            document.getElementById('outputData').value = '';
+            if (!raw.trim()) {
+                setStatus('Empty Input', 'error');
+                showMessage('Enter JSON or XML to repair.', true);
+                return;
+            }
+
+            try {
+                let type = document.getElementById('inputType').value;
+                if (type === 'auto') type = detectFormat(raw);
+
+                if (type === 'json') {
+                    const result = parseRepairableJson(raw);
+                    document.getElementById('outputData').value = JSON.stringify(result.value, null, 2);
+                    setStatus('JSON Repaired', 'success');
+                    showMessage(result.repairs.length
+                        ? 'Applied: ' + result.repairs.join('; ') + '. Original input was not changed.'
+                        : 'JSON is already valid; no repair was needed. Original input was not changed.');
+                } else {
+                    const result = repairXml(raw);
+                    document.getElementById('outputData').value = result.xml;
+                    setStatus('XML Repaired', 'success');
+                    showMessage(result.repairs.length
+                        ? 'Applied: ' + result.repairs.join('; ') + '. Original input was not changed.'
+                        : 'XML is already valid; no repair was needed. Original input was not changed.');
+                }
+            } catch (e) {
+                setStatus('Repair Failed', 'error');
+                showMessage('Could not safely repair this input: ' + e.message, true);
+            }
+        }
+
+        function repairXml(source) {
+            const stack = [];
+            const repairs = [];
+            let index = 0;
+            let repaired = '';
+
+            function findTagEnd(start) {
+                let quote = '';
+                for (let cursor = start; cursor < source.length; cursor++) {
+                    const char = source[cursor];
+                    if (quote) {
+                        if (char === quote) quote = '';
+                    } else if (char === '"' || char === "'") {
+                        quote = char;
+                    } else if (char === '>') {
+                        return cursor;
+                    }
+                }
+                throw new Error('An XML tag is missing its closing ">".');
+            }
+
+            while (index < source.length) {
+                const start = source.indexOf('<', index);
+                if (start === -1) {
+                    repaired += source.slice(index);
+                    break;
+                }
+                repaired += source.slice(index, start);
+                index = start;
+
+                if (source.startsWith('<!--', index)) {
+                    const end = source.indexOf('-->', index + 4);
+                    if (end === -1) throw new Error('An XML comment is not closed.');
+                    repaired += source.slice(index, end + 3);
+                    index = end + 3;
+                    continue;
+                }
+                if (source.startsWith('<![CDATA[', index)) {
+                    const end = source.indexOf(']]>', index + 9);
+                    if (end === -1) throw new Error('An XML CDATA section is not closed.');
+                    repaired += source.slice(index, end + 3);
+                    index = end + 3;
+                    continue;
+                }
+                if (source.startsWith('<?', index)) {
+                    const end = source.indexOf('?>', index + 2);
+                    if (end === -1) throw new Error('An XML processing instruction is not closed.');
+                    repaired += source.slice(index, end + 2);
+                    index = end + 2;
+                    continue;
+                }
+                if (/^<!DOCTYPE\b/i.test(source.slice(index))) {
+                    let quote = '';
+                    let subsetDepth = 0;
+                    let end = -1;
+                    for (let cursor = index + 9; cursor < source.length; cursor++) {
+                        const char = source[cursor];
+                        if (quote) {
+                            if (char === quote) quote = '';
+                        } else if (char === '"' || char === "'") {
+                            quote = char;
+                        } else if (char === '[') {
+                            subsetDepth++;
+                        } else if (char === ']') {
+                            subsetDepth--;
+                        } else if (char === '>' && subsetDepth === 0) {
+                            end = cursor;
+                            break;
+                        }
+                    }
+                    if (end === -1) throw new Error('The XML doctype is not closed.');
+                    repaired += source.slice(index, end + 1);
+                    index = end + 1;
+                    continue;
+                }
+                if (source.startsWith('<!', index)) {
+                    throw new Error('Unsupported or malformed XML declaration.');
+                }
+
+                const end = findTagEnd(index + 1);
+                const tag = source.slice(index, end + 1);
+                const closing = /^<\/([A-Za-z_][\w:.-]*)\s*>$/.exec(tag);
+                const opening = /^<([A-Za-z_][\w:.-]*)(?=[\s/>])/.exec(tag);
+                if (closing) {
+                    const matchingIndex = stack.lastIndexOf(closing[1]);
+                    if (matchingIndex === -1) {
+                        throw new Error('Found a closing tag without a matching opening tag: </' + closing[1] + '>.');
+                    }
+                    while (stack.length - 1 > matchingIndex) {
+                        const name = stack.pop();
+                        repaired += '</' + name + '>';
+                        repairs.push('closed <' + name + '> before </' + closing[1] + '>');
+                    }
+                    stack.pop();
+                    repaired += tag;
+                } else {
+                    if (!opening) throw new Error('Could not safely read an XML tag.');
+                    repaired += tag;
+                    if (!/\/\s*>$/.test(tag)) stack.push(opening[1]);
+                }
+                index = end + 1;
+            }
+
+            while (stack.length) {
+                const name = stack.pop();
+                repaired += '</' + name + '>';
+                repairs.push('closed unfinished <' + name + '>');
+            }
+
+            const document = new DOMParser().parseFromString(repaired, 'application/xml');
+            if (document.querySelector('parsererror')) {
+                throw new Error('The result is still not well-formed XML; check text, attributes, and document structure.');
+            }
+            return { xml: repaired, repairs };
+        }
+
+        function parseRepairableJson(source) {
+            let index = 0;
+            const repairs = new Set();
+            let firstRepairPosition = null;
+
+            function markRepair(description) {
+                if (firstRepairPosition === null) firstRepairPosition = index;
+                repairs.add(description);
+            }
+
+            function fail(message) {
+                const error = new Error(message);
+                error.position = index;
+                throw error;
+            }
+
+            function skipWhitespace() {
+                const start = index;
+                while (/\s/.test(source[index] || '') && index < source.length) index++;
+                return index - start;
+            }
+
+            function parseString() {
+                const quote = source[index++];
+                let token = '"';
+                while (index < source.length) {
+                    const char = source[index++];
+                    if (char === quote) {
+                        token += '"';
+                        try {
+                            return JSON.parse(token);
+                        } catch {
+                            fail('A string contains invalid JSON escapes.');
+                        }
+                    }
+                    if (char === '\\') {
+                        if (index >= source.length) break;
+                        const escaped = source[index++];
+                        if (quote === "'" && escaped === "'") {
+                            token += "'";
+                        } else {
+                            token += '\\' + escaped;
+                        }
+                    } else if (quote === "'" && char === '"') {
+                        token += '\\"';
+                    } else {
+                        token += char;
+                    }
+                }
+                fail('A string is missing its closing quote.');
+            }
+
+            function parseKey() {
+                if (source[index] === '"' || source[index] === "'") {
+                    const quote = source[index];
+                    const key = parseString();
+                    if (quote === "'") markRepair('converted single-quoted strings');
+                    return key;
+                }
+
+                const match = /^[A-Za-z_$][\w$]*/.exec(source.slice(index));
+                if (!match) fail('Expected a quoted property name.');
+                index += match[0].length;
+                markRepair('quoted unquoted property names');
+                return match[0];
+            }
+
+            function parseValue() {
+                skipWhitespace();
+                const char = source[index];
+
+                if (char === '{') return parseObject();
+                if (char === '[') return parseArray();
+                if (char === '"' || char === "'") {
+                    if (char === "'") markRepair('converted single-quoted strings');
+                    return parseString();
+                }
+
+                const remaining = source.slice(index);
+                const literal = /^(true|false|null)\b/.exec(remaining);
+                if (literal) {
+                    index += literal[0].length;
+                    return literal[0] === 'true' ? true : literal[0] === 'false' ? false : null;
+                }
+
+                const number = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/.exec(remaining);
+                if (number) {
+                    index += number[0].length;
+                    return Number(number[0]);
+                }
+
+                fail('Expected a JSON value.');
+            }
+
+            function parseObject() {
+                index++;
+                skipWhitespace();
+                const object = Object.create(null);
+                if (source[index] === '}') {
+                    index++;
+                    return object;
+                }
+                if (index === source.length) {
+                    markRepair('closed an unfinished object');
+                    return object;
+                }
+
+                while (true) {
+                    const key = parseKey();
+                    skipWhitespace();
+                    if (source[index] !== ':') fail('Expected ":" after a property name.');
+                    index++;
+                    object[key] = parseValue();
+
+                    const whitespace = skipWhitespace();
+                    if (source[index] === '}') {
+                        index++;
+                        return object;
+                    }
+                    if (source[index] === ']') {
+                        markRepair('closed an unfinished object');
+                        return object;
+                    }
+                    if (source[index] === ',') {
+                        index++;
+                        skipWhitespace();
+                        if (source[index] === '}') {
+                            index++;
+                            markRepair('removed a trailing comma');
+                            return object;
+                        }
+                        if (index === source.length) {
+                            markRepair('removed a trailing comma');
+                            markRepair('closed an unfinished object');
+                            return object;
+                        }
+                        continue;
+                    }
+                    if (index === source.length) {
+                        markRepair('closed an unfinished object');
+                        return object;
+                    }
+                    if (whitespace) {
+                        markRepair('inserted a missing comma');
+                        continue;
+                    }
+                    fail('Expected a comma or "}" after a property value.');
+                }
+            }
+
+            function parseArray() {
+                index++;
+                skipWhitespace();
+                const array = [];
+                if (source[index] === ']') {
+                    index++;
+                    return array;
+                }
+                if (index === source.length) {
+                    markRepair('closed an unfinished array');
+                    return array;
+                }
+
+                while (true) {
+                    array.push(parseValue());
+                    const whitespace = skipWhitespace();
+                    if (source[index] === ']') {
+                        index++;
+                        return array;
+                    }
+                    if (source[index] === '}') {
+                        markRepair('closed an unfinished array');
+                        return array;
+                    }
+                    if (source[index] === ',') {
+                        index++;
+                        skipWhitespace();
+                        if (source[index] === ']') {
+                            index++;
+                            markRepair('removed a trailing comma');
+                            return array;
+                        }
+                        if (index === source.length) {
+                            markRepair('removed a trailing comma');
+                            markRepair('closed an unfinished array');
+                            return array;
+                        }
+                        continue;
+                    }
+                    if (index === source.length) {
+                        markRepair('closed an unfinished array');
+                        return array;
+                    }
+                    if (whitespace) {
+                        markRepair('inserted a missing comma');
+                        continue;
+                    }
+                    fail('Expected a comma or "]" after an array value.');
+                }
+            }
+
+            skipWhitespace();
+            const value = parseValue();
+            skipWhitespace();
+            if (index !== source.length) fail('Unexpected content after the JSON value.');
+            return { value, repairs: Array.from(repairs), firstRepairPosition };
+        }
+
+        function minifyOutput() {
+            const output = document.getElementById('outputData');
+            const raw = output.value.trim();
+            if (!raw) {
+                setStatus('No Output', 'error');
+                showMessage('Format or convert data before minifying the output.');
+                return;
+            }
+
+            try {
+                const type = detectInputFormat(raw);
+                if (type === 'json') {
+                    const parsed = JSON.parse(raw);
+                    output.value = JSON.stringify(parsed);
+                } else {
+                    const parsed = new DOMParser().parseFromString(raw, 'application/xml');
+                    if (parsed.querySelector('parsererror')) {
+                        throw new Error('Output is not valid XML.');
+                    }
+                    output.value = minifyXml(parsed);
+                }
+                setStatus('Minified', 'success');
+                showMessage('Output minified successfully.');
+            } catch (e) {
+                setStatus('Minification Failed', 'error');
+                showMessage('Could not minify output: ' + e.message, true);
+            }
+        }
+
+        // Helper: Format XML with proper indentation
+        function formatXml(xml) {
+            const parser = new DOMParser();
+            const domDoc = parser.parseFromString(xml, 'application/xml');
+            
+            // Check for parsing errors in DOMParser
+            const parserError = domDoc.querySelector('parsererror');
+            if (parserError) {
+                throw new Error(parserError.textContent.split('\n')[0]);
+            }
+
+            return Array.from(domDoc.childNodes)
+                .map(node => serializeXmlNode(node, 0, true))
+                .filter(Boolean)
+                .join('\n');
+        }
+
+        function serializeXmlNode(node, depth, pretty) {
+            const indent = pretty ? '  '.repeat(depth) : '';
+
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                const attributes = Array.from(node.attributes)
+                    .map(attribute => ` ${attribute.name}="${escapeXml(attribute.value)}"`)
+                    .join('');
+                const children = Array.from(node.childNodes);
+                if (!children.length) return indent + `<${node.nodeName}${attributes} />`;
+
+                const hasElementChildren = children.some(child => child.nodeType === Node.ELEMENT_NODE);
+                const hasTextContent = children.some(child =>
+                    child.nodeType === Node.CDATA_SECTION_NODE ||
+                    (child.nodeType === Node.TEXT_NODE && child.nodeValue.trim())
+                );
+                const openTag = `<${node.nodeName}${attributes}>`;
+
+                if (pretty && hasElementChildren && !hasTextContent) {
+                    const formattedChildren = children
+                        .filter(child => child.nodeType !== Node.TEXT_NODE || child.nodeValue.trim())
+                        .map(child => serializeXmlNode(child, depth + 1, true))
+                        .join('\n');
+                    return `${indent}${openTag}\n${formattedChildren}\n${indent}</${node.nodeName}>`;
+                }
+
+                const content = children.map(child => serializeXmlNode(child, depth, false)).join('');
+                return `${indent}${openTag}${content}</${node.nodeName}>`;
+            }
+
+            if (node.nodeType === Node.TEXT_NODE) return escapeXml(node.nodeValue);
+            if (node.nodeType === Node.CDATA_SECTION_NODE) return `<![CDATA[${node.nodeValue}]]>`;
+            if (node.nodeType === Node.COMMENT_NODE) return `<!--${node.nodeValue}-->`;
+            if (node.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
+                return `<?${node.target}${node.data ? ' ' + node.data : ''}?>`;
+            }
+            if (node.nodeType === Node.DOCUMENT_TYPE_NODE) {
+                return new XMLSerializer().serializeToString(node);
+            }
+            return '';
+        }
+
+        function minifyXml(document) {
+            function removeFormattingWhitespace(element) {
+                const children = Array.from(element.childNodes);
+                const hasElementChildren = children.some(child => child.nodeType === Node.ELEMENT_NODE);
+                const hasTextContent = children.some(child =>
+                    child.nodeType === Node.CDATA_SECTION_NODE ||
+                    (child.nodeType === Node.TEXT_NODE && child.nodeValue.trim())
+                );
+
+                if (hasElementChildren && !hasTextContent) {
+                    children
+                        .filter(child => child.nodeType === Node.TEXT_NODE && !child.nodeValue.trim())
+                        .forEach(child => element.removeChild(child));
+                }
+                Array.from(element.children).forEach(removeFormattingWhitespace);
+            }
+
+            if (document.documentElement) removeFormattingWhitespace(document.documentElement);
+            return new XMLSerializer().serializeToString(document).trim();
+        }
+
+        // Conversion Helpers
+        function convertToJson() {
+            const raw = document.getElementById('inputData').value.trim();
+            try {
+                // Assume XML to JSON conversion
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(raw, 'application/xml');
+                const parserError = xmlDoc.querySelector('parsererror');
+                if (parserError) throw new Error("Invalid XML input for conversion.");
+
+                const jsonResult = xmlToJson(xmlDoc);
+                document.getElementById('outputData').value = JSON.stringify(jsonResult, null, 2);
+                setStatus('Converted to JSON', 'success');
+                showMessage('Successfully converted XML to JSON.');
+            } catch (e) {
+                setStatus('Conversion Failed', 'error');
+                showMessage('Conversion Error: ' + e.message, true);
+            }
+        }
+
+        function xmlToJson(xml) {
+            if (xml.nodeType === Node.DOCUMENT_NODE) {
+                const root = xml.documentElement;
+                return root ? { [root.nodeName]: xmlToJson(root) } : {};
+            }
+            if (xml.nodeType === Node.TEXT_NODE || xml.nodeType === Node.CDATA_SECTION_NODE) {
+                return xml.nodeValue;
+            }
+            if (xml.nodeType !== Node.ELEMENT_NODE) return null;
+
+            const attributes = Object.create(null);
+            for (const attribute of Array.from(xml.attributes)) {
+                attributes[attribute.nodeName] = attribute.value;
+            }
+
+            const children = Array.from(xml.childNodes).filter(child =>
+                child.nodeType === Node.ELEMENT_NODE ||
+                child.nodeType === Node.TEXT_NODE ||
+                child.nodeType === Node.CDATA_SECTION_NODE
+            );
+            const elements = children.filter(child => child.nodeType === Node.ELEMENT_NODE);
+            const textNodes = children.filter(child =>
+                child.nodeType === Node.TEXT_NODE || child.nodeType === Node.CDATA_SECTION_NODE
+            );
+            const hasAttributes = Object.keys(attributes).length > 0;
+            const hasCdata = textNodes.some(child => child.nodeType === Node.CDATA_SECTION_NODE);
+            const seenChildNames = new Set();
+            let previousChildName = null;
+            let canGroupChildren = true;
+            for (const child of elements) {
+                if (child.nodeName !== previousChildName && seenChildNames.has(child.nodeName)) {
+                    canGroupChildren = false;
+                    break;
+                }
+                seenChildNames.add(child.nodeName);
+                previousChildName = child.nodeName;
+            }
+
+            if (elements.length && (textNodes.length || !canGroupChildren)) {
+                const result = Object.create(null);
+                if (hasAttributes) result['@attributes'] = attributes;
+                result['#content'] = children.map(child => {
+                    if (child.nodeType === Node.TEXT_NODE) return { '#text': child.nodeValue };
+                    if (child.nodeType === Node.CDATA_SECTION_NODE) return { '#cdata': child.nodeValue };
+                    return { [child.nodeName]: xmlToJson(child) };
+                });
+                return result;
+            }
+
+            if (!elements.length && hasCdata) {
+                const result = Object.create(null);
+                if (hasAttributes) result['@attributes'] = attributes;
+                result['#content'] = textNodes.map(child => child.nodeType === Node.CDATA_SECTION_NODE
+                    ? { '#cdata': child.nodeValue }
+                    : { '#text': child.nodeValue });
+                return result;
+            }
+
+            if (!elements.length) {
+                const text = textNodes.map(child => child.nodeValue).join('');
+                if (!hasAttributes) return text;
+                const result = Object.create(null);
+                result['@attributes'] = attributes;
+                if (text) result['#text'] = text;
+                return result;
+            }
+
+            const result = Object.create(null);
+            if (hasAttributes) result['@attributes'] = attributes;
+            for (const child of elements) {
+                if (typeof result[child.nodeName] === 'undefined') {
+                    result[child.nodeName] = xmlToJson(child);
+                } else if (Array.isArray(result[child.nodeName])) {
+                    result[child.nodeName].push(xmlToJson(child));
+                } else {
+                    result[child.nodeName] = [result[child.nodeName], xmlToJson(child)];
+                }
+            }
+            return result;
+        }
+
+        function convertToXml() {
+            const raw = document.getElementById('inputData').value.trim();
+            document.getElementById('outputData').value = '';
+            try {
+                const jsonObj = JSON.parse(raw);
+                let rootName = 'root';
+                let rootValue = jsonObj;
+                if (jsonObj && typeof jsonObj === 'object' && !Array.isArray(jsonObj)) {
+                    const keys = Object.keys(jsonObj);
+                    if (keys.length === 1 && /^[A-Za-z_][\w.:-]*$/.test(keys[0])) {
+                        [rootName] = keys;
+                        rootValue = jsonObj[rootName];
+                    }
+                }
+                const xmlString = jsonToXml(rootValue, rootName);
+                // Format the resulting XML
+                const formatted = formatXml('<?xml version="1.0" encoding="UTF-8"?>' + xmlString);
+                document.getElementById('outputData').value = formatted;
+                setStatus('Converted to XML', 'success');
+                showMessage('Successfully converted JSON to XML.');
+            } catch (e) {
+                setStatus('Conversion Failed', 'error');
+                showMessage('Conversion Error: Ensure input is valid JSON. ' + e.message, true);
+            }
+        }
+
+        function escapeXml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        }
+
+        function jsonToXml(o, rootName) {
+            function toXml(value, name) {
+                if (!/^[A-Za-z_][\w.:-]*$/.test(name)) {
+                    throw new Error('Invalid XML element name: ' + name);
+                }
+                if (Array.isArray(value)) {
+                    return value.map(item => toXml(item, name)).join('');
+                }
+                if (value === null) return `<${name} />`;
+                if (typeof value !== 'object') {
+                    return `<${name}>${escapeXml(value)}</${name}>`;
+                }
+
+                const attributes = Object.create(null);
+                const nestedAttributes = value['@attributes'];
+                if (nestedAttributes !== undefined) {
+                    if (!nestedAttributes || typeof nestedAttributes !== 'object' || Array.isArray(nestedAttributes)) {
+                        throw new Error('"@attributes" must be an object.');
+                    }
+                    Object.assign(attributes, nestedAttributes);
+                }
+                for (const key of Object.keys(value)) {
+                    if (key.startsWith('@') && key !== '@attributes') {
+                        attributes[key.slice(1)] = value[key];
+                    }
+                }
+
+                const attributeText = Object.entries(attributes).map(([key, attributeValue]) => {
+                    if (!/^[A-Za-z_][\w.:-]*$/.test(key)) {
+                        throw new Error('Invalid XML attribute name: ' + key);
+                    }
+                    if (attributeValue !== null && typeof attributeValue === 'object') {
+                        throw new Error('XML attribute values must be scalar.');
+                    }
+                    return ` ${key}="${escapeXml(attributeValue ?? '')}"`;
+                }).join('');
+
+                let content = '';
+                if (Array.isArray(value['#content'])) {
+                    content = value['#content'].map(item => {
+                        if (!item || typeof item !== 'object' || Array.isArray(item)) {
+                            throw new Error('"#content" entries must be objects.');
+                        }
+                        if (Object.prototype.hasOwnProperty.call(item, '#text')) return escapeXml(item['#text']);
+                        if (Object.prototype.hasOwnProperty.call(item, '#cdata')) {
+                            const data = String(item['#cdata']).replace(/\]\]>/g, ']]]]><![CDATA[>');
+                            return `<![CDATA[${data}]]>`;
+                        }
+                        return Object.keys(item).map(childName => toXml(item[childName], childName)).join('');
+                    }).join('');
+                } else {
+                    if (Object.prototype.hasOwnProperty.call(value, '#text')) content += escapeXml(value['#text']);
+                    for (const key of Object.keys(value)) {
+                        if (key === '@attributes' || key.startsWith('@') || key === '#text' || key === '#content') continue;
+                        content += toXml(value[key], key);
+                    }
+                }
+
+                return content
+                    ? `<${name}${attributeText}>${content}</${name}>`
+                    : `<${name}${attributeText} />`;
+            }
+
+            return toXml(o, rootName);
+        }
+
+        function copyOutput() {
+            const output = document.getElementById('outputData');
+            if (!output.value) return;
+            navigator.clipboard.writeText(output.value);
+            const originalText = event.target.textContent;
+            event.target.textContent = "Copied!";
+            setTimeout(() => { event.target.textContent = originalText; }, 1500);
+        }
+
+        document.getElementById('inputData').addEventListener('input', updateInputDiagnostics);
+        document.getElementById('inputData').addEventListener('scroll', (event) => {
+            const highlight = document.getElementById('inputHighlight');
+            highlight.scrollTop = event.target.scrollTop;
+            highlight.scrollLeft = event.target.scrollLeft;
+        });
+        document.getElementById('inputType').addEventListener('change', updateInputDiagnostics);
+        updateInputDiagnostics();
+    </script>
+</body>
+</html>
