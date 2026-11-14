@@ -190,7 +190,6 @@
                         isConvertible = true;
                     } catch (e) {
                         isValid = false;
-                        errorMessage = 'JSON error: ' + e.message;
                         const position = /position\s+(\d+)/i.exec(e.message);
                         const lineColumn = /line\s+(\d+)\s+column\s+(\d+)/i.exec(e.message);
                         if (position) {
@@ -215,6 +214,19 @@
                             if (Number.isInteger(repairError.position)) {
                                 firstErrorLine = raw.slice(0, repairError.position).split('\n').length;
                             }
+                            const descriptions = {
+                                'A string contains invalid JSON escapes.': 'use valid JSON escape sequences',
+                                'A string is missing its closing quote.': 'close the string',
+                                'Expected a quoted property name.': 'use a quoted property name',
+                                'Expected ":" after a property name.': 'add a colon after the property name',
+                                'Expected a JSON value.': 'provide a valid JSON value',
+                                'Expected a comma or "}" after a property value.': 'add a comma or closing brace',
+                                'Expected a comma or "]" after an array value.': 'add a comma or closing bracket',
+                                'Unexpected content after the JSON value.': 'remove content after the JSON value'
+                            };
+                            const description = descriptions[repairError.message] || 'check the JSON syntax';
+                            if (firstErrorLine === null) firstErrorLine = lineColumn ? Number(lineColumn[1]) : 1;
+                            errorMessage = 'Issue on line ' + firstErrorLine + ': ' + description + '.';
                         }
                         if (firstErrorLine !== null) {
                             firstErrorLine = Math.min(firstErrorLine, raw.split('\n').length);
@@ -272,6 +284,7 @@
             } else if (type === 'xml') {
                 convertToJson();
             } else {
+                document.getElementById('outputData').value = '';
                 setStatus('Unknown Format', 'error');
                 showMessage('Could not detect JSON or XML input.', true);
             }
@@ -781,6 +794,7 @@
         // Conversion Helpers
         function convertToJson() {
             const raw = document.getElementById('inputData').value.trim();
+            document.getElementById('outputData').value = '';
             try {
                 // Assume XML to JSON conversion
                 const parser = new DOMParser();
